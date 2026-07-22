@@ -24,9 +24,14 @@ USER_AGENT = (
 
 def fetch_page_text() -> str:
     with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page(user_agent=USER_AGENT, viewport={"width": 1366, "height": 900})
-        page.goto(URL, wait_until="load", timeout=60000)
+        browser = p.chromium.launch(args=["--disable-http2"])
+        context = browser.new_context(
+            user_agent=USER_AGENT,
+            viewport={"width": 1366, "height": 900},
+            extra_http_headers={"Accept-Language": "en-US,en;q=0.9"},
+        )
+        page = context.new_page()
+        page.goto(URL, wait_until="domcontentloaded", timeout=60000)
         # Give the client-side app time to fetch and render showtimes
         page.wait_for_timeout(8000)
         content = page.inner_text("body")
@@ -52,7 +57,7 @@ def send_notification():
             "Priority": "urgent",
             "Tags": "movie_camera,tada",
         },
-        timeout=1,
+        timeout=15,
     )
     print("Notification sent.")
 
